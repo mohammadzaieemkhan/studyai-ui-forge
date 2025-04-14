@@ -115,7 +115,7 @@ const Sidebar = ({ isMobile, isSidebarOpen, closeSidebar }: SidebarProps) => {
           onClick={isMobile ? closeSidebar : undefined}
         >
           <GraduationCap className="h-6 w-6 text-sidebar-primary" />
-          <span className="font-bold text-lg">StudyAI</span>
+          <span className="font-bold text-lg">IndelibleAI</span>
         </Link>
         {isMobile && (
           <Button

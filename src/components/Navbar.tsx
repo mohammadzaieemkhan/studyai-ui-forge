@@ -31,7 +31,7 @@ const Navbar = () => {
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
                 <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
               </svg>
-              <span className="text-lg font-semibold">StudyAI</span>
+              <span className="text-lg font-semibold">IndelibleAI</span>
             </Link>
           </div>
           <div className="hidden md:flex md:items-center md:space-x-6">

@@ -36,7 +36,7 @@ const DashboardLayout = () => {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <h1 className="font-semibold">StudyAI</h1>
+            <h1 className="font-semibold">IndelibleAI</h1>
           </div>
         )}
         <main className="px-4 py-6 md:px-8">

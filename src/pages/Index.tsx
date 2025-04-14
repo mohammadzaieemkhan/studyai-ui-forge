@@ -57,7 +57,7 @@ const Index = () => {
               <div className="relative bg-muted rounded-xl overflow-hidden p-1 shadow-xl">
                 <img 
                   src="https://images.unsplash.com/photo-1571260899304-425eee4c7efc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                  alt="StudyAI Dashboard Preview" 
+                  alt="IndelibleAI Dashboard Preview" 
                   className="rounded-lg shadow-lg"
                 />
                 <div className="absolute top-3 right-3">
@@ -158,7 +158,7 @@ const Index = () => {
         <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold mb-6">Ready to transform your study experience?</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-            Join thousands of students achieving academic excellence with StudyAI's personalized learning platform.
+            Join thousands of students achieving academic excellence with IndelibleAI's personalized learning platform.
           </p>
           <Link to="/login">
             <Button size="lg" className="gap-2">
@@ -174,7 +174,7 @@ const Index = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2 mb-4 md:mb-0">
               <BookOpen className="h-6 w-6 text-primary" />
-              <span className="text-lg font-semibold">StudyAI</span>
+              <span className="text-lg font-semibold">IndelibleAI</span>
             </div>
             <div className="flex gap-6">
               <a href="#" className="text-sm text-muted-foreground hover:text-foreground">
@@ -189,7 +189,7 @@ const Index = () => {
             </div>
           </div>
           <div className="mt-8 text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} StudyAI. All rights reserved.
+            © {new Date().getFullYear()} IndelibleAI. All rights reserved.
           </div>
         </div>
       </footer>
