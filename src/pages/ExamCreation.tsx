@@ -102,7 +102,11 @@ const ExamCreation = () => {
         options: formData.questionType === "multiple-choice" 
           ? ['Option A', 'Option B', 'Option C', 'Option D'] 
           : undefined,
-        answer: formData.questionType === "multiple-choice" ? "Option B" : "Sample answer for question.",
+        answer: formData.questionType === "multiple-choice" 
+          ? "Option B" 
+          : formData.questionType === "long-answer"
+            ? "This would be a comprehensive answer that thoroughly addresses the question, with multiple paragraphs discussing the key concepts, examples, and applications relevant to the topic."
+            : "Sample answer for question.",
         explanation: "This is an explanation of the correct answer and the concept tested."
       }));
       
@@ -226,6 +230,7 @@ const ExamCreation = () => {
                       <SelectItem value="short-answer">Short Answer</SelectItem>
                       <SelectItem value="true-false">True/False</SelectItem>
                       <SelectItem value="essay">Essay</SelectItem>
+                      <SelectItem value="long-answer">Long Answer</SelectItem>
                       <SelectItem value="mixed">Mixed</SelectItem>
                     </SelectContent>
                   </Select>
@@ -327,6 +332,17 @@ const ExamCreation = () => {
                                 <span>{option}</span>
                               </div>
                             ))}
+                          </div>
+                        )}
+                        
+                        {formData.questionType === "long-answer" && (
+                          <div className="mt-3">
+                            <Label htmlFor={`answer-${q.id}`} className="text-xs text-muted-foreground">Long Answer Response Area</Label>
+                            <div className="mt-1 border border-dashed border-gray-300 rounded-md p-2 min-h-[100px] bg-gray-50/50">
+                              <p className="text-xs text-muted-foreground italic">
+                                Student will provide a detailed response here...
+                              </p>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -465,6 +481,7 @@ const ExamCreation = () => {
                         <SelectItem value="short-answer">Short Answer</SelectItem>
                         <SelectItem value="true-false">True/False</SelectItem>
                         <SelectItem value="essay">Essay</SelectItem>
+                        <SelectItem value="long-answer">Long Answer</SelectItem>
                         <SelectItem value="mixed">Mixed</SelectItem>
                       </SelectContent>
                     </Select>
