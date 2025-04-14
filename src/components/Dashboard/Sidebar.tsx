@@ -13,7 +13,6 @@ import {
   BarChart2,
   Clock,
   Calendar,
-  Search,
   ChevronDown,
   ChevronRight,
   Settings,
@@ -22,6 +21,8 @@ import {
   GraduationCap,
   NotebookPen,
   User,
+  Zap,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -47,35 +48,11 @@ const Sidebar = ({ isMobile, isSidebarOpen, closeSidebar }: SidebarProps) => {
     navigate("/login");
   };
 
-  const sidebarItems = [
-    {
-      label: "Dashboard",
-      icon: <Home className="h-4 w-4" />,
-      path: "/dashboard",
-    },
-    {
-      label: "Exam Creation",
-      icon: <FileText className="h-4 w-4" />,
-      path: "/exam-creation",
-    },
-    {
-      label: "Performance",
-      icon: <BarChart2 className="h-4 w-4" />,
-      path: "/performance",
-    },
-    {
-      label: "Study Schedule",
-      icon: <Calendar className="h-4 w-4" />,
-      path: "/schedule",
-    },
-  ];
-
   const studyMaterials = [
-    { label: "Mathematics", path: "/materials/math" },
-    { label: "Physics", path: "/materials/physics" },
-    { label: "Chemistry", path: "/materials/chemistry" },
-    { label: "Biology", path: "/materials/biology" },
-    { label: "History", path: "/materials/history" },
+    { label: "Machine Learning Fundamentals", category: "AI" },
+    { label: "Advanced Statistics", category: "Mathematics" },
+    { label: "Data Structures & Algorithms", category: "Computer Science" },
+    { label: "Neural Networks Deep Dive", category: "AI" },
   ];
 
   const featureItems = [
@@ -90,9 +67,25 @@ const Sidebar = ({ isMobile, isSidebarOpen, closeSidebar }: SidebarProps) => {
       path: "/saved-questions",
     },
     {
-      label: "Smart Notes",
-      icon: <NotebookPen className="h-4 w-4" />,
-      path: "/smart-notes",
+      label: "Performance Insights",
+      icon: <BarChart2 className="h-4 w-4" />,
+      path: "/performance",
+    },
+    {
+      label: "Study Schedule",
+      icon: <Calendar className="h-4 w-4" />,
+      path: "/schedule",
+    },
+  ];
+
+  const smartNotes = [
+    { 
+      title: "Backpropagation Explained", 
+      subtitle: "The mathematical foundation behind neural networks"
+    },
+    { 
+      title: "Key Statistical Methods", 
+      subtitle: "Understanding p-values, confidence intervals & more"
     },
   ];
 
@@ -114,7 +107,7 @@ const Sidebar = ({ isMobile, isSidebarOpen, closeSidebar }: SidebarProps) => {
           className="flex items-center gap-2"
           onClick={isMobile ? closeSidebar : undefined}
         >
-          <GraduationCap className="h-6 w-6 text-sidebar-primary" />
+          <GraduationCap className="h-6 w-6 text-blue-500" />
           <span className="font-bold text-lg">IndelibleAI</span>
         </Link>
         {isMobile && (
@@ -130,94 +123,45 @@ const Sidebar = ({ isMobile, isSidebarOpen, closeSidebar }: SidebarProps) => {
         )}
       </div>
       
-      <div className="p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-sidebar-foreground opacity-50" />
-          <input
-            type="text"
-            placeholder="Search..."
-            className="w-full py-2 pl-10 pr-4 bg-sidebar-accent/50 text-sidebar-foreground placeholder:text-sidebar-foreground/50 rounded-md focus:outline-none focus:ring-2 focus:ring-sidebar-primary"
-          />
-        </div>
-      </div>
-
       <ScrollArea className="flex-1 px-3">
-        <div className="space-y-1 py-2">
-          {sidebarItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              onClick={isMobile ? closeSidebar : undefined}
-            >
-              <Button
-                variant="ghost"
-                className={cn(
-                  "w-full justify-start",
-                  location.pathname === item.path &&
-                    "bg-sidebar-accent text-sidebar-accent-foreground"
-                )}
-              >
-                {item.icon}
-                <span className="ml-2">{item.label}</span>
-              </Button>
-            </Link>
-          ))}
-        </div>
-
-        <div className="py-2">
-          <Button
-            variant="ghost"
-            className="w-full justify-between"
-            onClick={toggleMaterials}
-          >
-            <div className="flex items-center">
-              <Book className="h-4 w-4" />
-              <span className="ml-2">Study Materials</span>
-            </div>
-            {materialsExpanded ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </Button>
-          {materialsExpanded && (
-            <div className="ml-8 space-y-1 mt-1">
-              {studyMaterials.map((material) => (
-                <Link
-                  key={material.path}
-                  to={material.path}
-                  onClick={isMobile ? closeSidebar : undefined}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "w-full justify-start",
-                      location.pathname === material.path &&
-                        "bg-sidebar-accent text-sidebar-accent-foreground"
-                    )}
-                  >
-                    {material.label}
-                  </Button>
-                </Link>
-              ))}
+        <div className="space-y-4 py-2">
+          <div className="px-3 text-xs uppercase text-sidebar-foreground/50 font-semibold">
+            Study Materials
+          </div>
+          {studyMaterials.map((material, index) => (
+            <div key={index} className="px-1">
               <Link
-                to="/materials"
-                className="block text-xs text-primary px-4 py-2 hover:underline"
+                to={`/materials/${material.label.toLowerCase().replace(/\s+/g, '-')}`}
                 onClick={isMobile ? closeSidebar : undefined}
               >
-                View all materials
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-sm h-auto py-2"
+                >
+                  <Book className="h-4 w-4 mr-2 text-blue-500" />
+                  <div className="flex flex-col items-start">
+                    <span>{material.label}</span>
+                    <span className="text-xs text-muted-foreground">{material.category}</span>
+                  </div>
+                </Button>
               </Link>
             </div>
-          )}
+          ))}
+          <Link
+            to="/materials"
+            className="block text-xs text-primary px-4 py-2 hover:underline"
+            onClick={isMobile ? closeSidebar : undefined}
+          >
+            View all materials
+          </Link>
         </div>
 
         <Separator className="my-3" />
 
         <div className="space-y-1 py-2">
-          <p className="px-4 text-xs font-semibold uppercase text-sidebar-foreground/50 mb-2">
+          <div className="px-3 text-xs uppercase text-sidebar-foreground/50 font-semibold mb-2">
             Features
-          </p>
+          </div>
           {featureItems.map((item) => (
             <Link
               key={item.path}
@@ -242,32 +186,26 @@ const Sidebar = ({ isMobile, isSidebarOpen, closeSidebar }: SidebarProps) => {
         <Separator className="my-3" />
 
         <div className="space-y-1 py-2">
-          <Link to="/profile" onClick={isMobile ? closeSidebar : undefined}>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-start",
-                location.pathname === "/profile" &&
-                  "bg-sidebar-accent text-sidebar-accent-foreground"
-              )}
-            >
-              <User className="h-4 w-4" />
-              <span className="ml-2">Profile</span>
-            </Button>
-          </Link>
-          <Link to="/settings" onClick={isMobile ? closeSidebar : undefined}>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-start",
-                location.pathname === "/settings" &&
-                  "bg-sidebar-accent text-sidebar-accent-foreground"
-              )}
-            >
-              <Settings className="h-4 w-4" />
-              <span className="ml-2">Settings</span>
-            </Button>
-          </Link>
+          <div className="px-3 text-xs uppercase text-sidebar-foreground/50 font-semibold mb-2">
+            Smart Notes
+          </div>
+          {smartNotes.map((note, index) => (
+            <div key={index} className="px-1 mb-2">
+              <Link
+                to={`/smart-notes/${note.title.toLowerCase().replace(/\s+/g, '-')}`}
+                onClick={isMobile ? closeSidebar : undefined}
+              >
+                <div className="p-2 rounded-md hover:bg-muted">
+                  <div className="font-medium text-sm">{note.title}</div>
+                  <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{note.subtitle}</div>
+                </div>
+              </Link>
+            </div>
+          ))}
+          <Button variant="outline" size="sm" className="ml-3 mt-1 gap-2">
+            <Zap className="h-3.5 w-3.5" />
+            Generate new summary
+          </Button>
         </div>
       </ScrollArea>
 
@@ -278,8 +216,8 @@ const Sidebar = ({ isMobile, isSidebarOpen, closeSidebar }: SidebarProps) => {
               <span className="text-sm font-semibold">JS</span>
             </div>
             <div className="ml-2">
-              <p className="text-sm font-medium">John Smith</p>
-              <p className="text-xs text-sidebar-foreground/70">Student</p>
+              <p className="text-sm font-medium">Student Profile</p>
+              <p className="text-xs text-sidebar-foreground/70">Advanced Level</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
