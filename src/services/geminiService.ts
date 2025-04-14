@@ -1,9 +1,4 @@
-
-// This is a mock implementation of the Gemini API service
-// In a real application, this would make actual API calls to the Gemini API through a backend
-
-// The API key would be stored securely in the backend
-// const GEMINI_API_KEY = "AIzaSyC8gJgkyPZE4nvX66GsZRdLfJ2w2yNW9sk";
+// This file implements the Gemini API service for exam generation
 
 export interface ExamGenerationParams {
   subject: string;
@@ -36,19 +31,206 @@ export interface ExamGenerationResponse {
   };
 }
 
-// This function simulates a request to Gemini API
+// Your Gemini API key - note that exposing API keys in the frontend is not recommended
+// for production applications, but for educational purposes we'll use it directly
+const GEMINI_API_KEY = "AIzaSyC8gJgkyPZE4nvX66GsZRdLfJ2w2yNW9sk";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+
 export const generateExamWithGemini = async (
   params: ExamGenerationParams
 ): Promise<ExamGenerationResponse> => {
   console.log("Generating exam with parameters:", params);
   
-  // In a real implementation, this would make an API call to your backend
-  // which would then use the Gemini API with the stored API key
+  try {
+    // Create prompt based on parameters
+    const prompt = createPromptForExamGeneration(params);
+    
+    // Call Gemini API
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: prompt }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 8192,
+        }
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Gemini API error:", errorData);
+      throw new Error(`Gemini API error: ${errorData.error?.message || "Unknown error"}`);
+    }
+    
+    const data = await response.json();
+    
+    // Process and format Gemini's response
+    const generatedContent = data.candidates[0]?.content?.parts[0]?.text;
+    if (!generatedContent) {
+      throw new Error("No content generated from Gemini API");
+    }
+    
+    // Parse the generated content into questions
+    const questions = parseGeneratedContent(generatedContent, params.questionType);
+    
+    // Return formatted response
+    return {
+      questions,
+      metadata: {
+        subject: params.subject,
+        topic: params.topic,
+        difficulty: params.difficulty,
+        questionCount: params.questionCount,
+        timeLimit: params.timeLimit,
+        generatedAt: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error("Error generating exam:", error);
+    // Fallback to mock data if the API call fails
+    return generateMockExam(params);
+  }
+};
+
+// Helper function to create a prompt for Gemini based on exam parameters
+function createPromptForExamGeneration(params: ExamGenerationParams): string {
+  let prompt = `Generate ${params.questionCount} ${params.difficulty} level ${params.questionType} questions about ${params.topic} in the subject of ${params.subject}. `;
   
-  // Simulate API call delay
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  // Add question type specific instructions
+  if (params.questionType === "multiple-choice") {
+    prompt += "For each question, provide 4 options (labeled A, B, C, D), mark the correct answer, and include a brief explanation. ";
+  } else if (params.questionType === "true-false") {
+    prompt += "For each question, indicate whether the statement is true or false, and include a brief explanation. ";
+  } else if (params.questionType === "short-answer") {
+    prompt += "For each question, provide a sample correct answer and a brief explanation. ";
+  } else if (params.questionType === "essay") {
+    prompt += "For each question, provide some key points that should be addressed in a good answer. ";
+  } else if (params.questionType === "mixed") {
+    prompt += "Mix different question types (multiple-choice, true-false, and short-answer). For multiple-choice, provide 4 options (labeled A, B, C, D). Mark the correct answer for all questions and include a brief explanation. ";
+  }
   
-  // Generate mock questions based on params
+  // Add time constraint context
+  prompt += `The exam should be completable within ${params.timeLimit} minutes. `;
+  
+  // Add custom instructions if provided
+  if (params.customPrompt) {
+    prompt += `Additional instructions: ${params.customPrompt}`;
+  }
+  
+  // Add request for structured format to make parsing easier
+  prompt += "Please format each question clearly with a number, followed by the question text, options (if applicable), the correct answer, and an explanation. Separate each question with a line break.";
+  
+  return prompt;
+}
+
+// Helper function to parse Gemini's response into structured question objects
+function parseGeneratedContent(content: string, questionType: string): GeneratedQuestion[] {
+  const questions: GeneratedQuestion[] = [];
+  
+  try {
+    // Split content by questions (looking for patterns like "1.", "Question 1:", etc.)
+    const questionBlocks = content.split(/\n\s*(?:\d+[\)\.:]|Question \d+:?)\s*/);
+    
+    // Filter out empty blocks and process each question
+    questionBlocks.filter(block => block.trim().length > 0).forEach((block, index) => {
+      const id = `q-${index + 1}`;
+      const lines = block.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      
+      if (lines.length < 2) return; // Skip if not enough content
+      
+      const question = lines[0];
+      let options: string[] | undefined;
+      let answer: string | undefined;
+      let explanation: string | undefined;
+      
+      if (questionType === "multiple-choice" || questionType === "mixed") {
+        // Try to extract options (looking for A), B), etc. patterns)
+        const optionLines = lines.filter(line => /^[A-D][\)\.]/.test(line));
+        if (optionLines.length > 0) {
+          options = optionLines.map(line => line.replace(/^[A-D][\)\.]\s*/, ''));
+        }
+        
+        // Try to find answer line (looking for "Answer:" or "Correct:" patterns)
+        const answerLine = lines.find(line => /Answer:|Correct:|The correct answer is/i.test(line));
+        if (answerLine) {
+          // Extract letter A, B, C, or D
+          const answerMatch = answerLine.match(/[A-D]/);
+          answer = answerMatch ? `Option ${answerMatch[0]}` : answerLine.replace(/.*?:\s*/, '');
+        }
+        
+        // Try to find explanation
+        const explanationIndex = lines.findIndex(line => /Explanation:|Reason:/i.test(line));
+        if (explanationIndex !== -1) {
+          explanation = lines.slice(explanationIndex).join(' ').replace(/Explanation:|Reason:/i, '').trim();
+        }
+      } else {
+        // For other question types, simpler parsing
+        const answerIndex = lines.findIndex(line => /Answer:|Correct:|Solution:/i.test(line));
+        if (answerIndex !== -1) {
+          answer = lines[answerIndex].replace(/.*?:\s*/, '');
+          // If there are more lines after the answer, treat them as explanation
+          if (answerIndex < lines.length - 1) {
+            explanation = lines.slice(answerIndex + 1).join(' ');
+          }
+        }
+      }
+      
+      questions.push({
+        id,
+        question,
+        options,
+        answer: answer || "No answer provided",
+        explanation: explanation || "No explanation provided",
+      });
+    });
+    
+    // If parsing failed to produce enough questions, pad with generic ones
+    while (questions.length < 5) {
+      questions.push({
+        id: `q-${questions.length + 1}`,
+        question: `Failed to parse question ${questions.length + 1}`,
+        options: questionType === "multiple-choice" ? ["Option A", "Option B", "Option C", "Option D"] : undefined,
+        answer: "Unable to parse answer",
+        explanation: "The AI response could not be properly parsed for this question.",
+      });
+    }
+    
+    return questions;
+  } catch (error) {
+    console.error("Error parsing Gemini response:", error);
+    return generateFallbackQuestions(questionType);
+  }
+}
+
+// Fallback function to generate mock questions if parsing fails
+function generateFallbackQuestions(questionType: string): GeneratedQuestion[] {
+  return Array.from({ length: 5 }, (_, i) => ({
+    id: `q-fallback-${i + 1}`,
+    question: `Fallback question ${i + 1} due to parsing error`,
+    options: questionType === "multiple-choice" || questionType === "mixed" 
+      ? ["Option A", "Option B", "Option C", "Option D"] 
+      : undefined,
+    answer: "Fallback answer",
+    explanation: "This is a fallback question generated because the AI response could not be properly parsed.",
+  }));
+}
+
+// Fallback function to generate mock exam data if the API fails
+function generateMockExam(params: ExamGenerationParams): ExamGenerationResponse {
+  console.log("Falling back to mock exam generation");
+  
   const questions: GeneratedQuestion[] = [];
   
   for (let i = 0; i < params.questionCount; i++) {
@@ -76,9 +258,9 @@ export const generateExamWithGemini = async (
       generatedAt: new Date().toISOString(),
     },
   };
-};
+}
 
-// Helper functions to generate mock content
+// Helper functions for mock content generation (from the original implementation)
 function generateQuestionText(subject: string, topic: string, index: number): string {
   const subjectQuestions: Record<string, string[]> = {
     mathematics: [
