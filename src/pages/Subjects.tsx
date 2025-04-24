@@ -5,11 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSubjects } from '@/hooks/useSubjects';
 import { toast } from 'sonner';
+import { Loader2, PlusCircle } from 'lucide-react';
 
 const Subjects = () => {
   const { subjects, loading, error, fetchSubjects, createSubject, updateSubject, deleteSubject } = useSubjects();
   const [newSubject, setNewSubject] = useState({ name: '', description: '' });
   const [editingSubject, setEditingSubject] = useState<string | null>(null);
+
+  // Get the current user ID - would normally come from auth context
+  // For now we'll use a placeholder
+  const currentUserId = "user-id-placeholder";
 
   useEffect(() => {
     fetchSubjects();
@@ -30,7 +35,7 @@ const Subjects = () => {
     await createSubject({
       name: newSubject.name,
       description: newSubject.description,
-      user_id: 'current_user_id' // Replace with actual user ID
+      user_id: currentUserId
     });
 
     setNewSubject({ name: '', description: '' });
@@ -54,47 +59,80 @@ const Subjects = () => {
     toast.success('Subject deleted successfully');
   };
 
+  const cancelEdit = () => {
+    setNewSubject({ name: '', description: '' });
+    setEditingSubject(null);
+  };
+
   return (
     <div className="container mx-auto p-4">
       <Card>
         <CardHeader>
-          <CardTitle>Manage Subjects</CardTitle>
+          <CardTitle className="flex justify-between items-center">
+            <span>Manage Subjects</span>
+            {loading && <Loader2 className="h-5 w-5 animate-spin" />}
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-2 mb-4">
-            <Input
-              placeholder="Subject Name"
-              value={newSubject.name}
-              onChange={(e) => setNewSubject(prev => ({ ...prev, name: e.target.value }))}
-            />
-            <Input
-              placeholder="Description (optional)"
-              value={newSubject.description}
-              onChange={(e) => setNewSubject(prev => ({ ...prev, description: e.target.value }))}
-            />
-            {editingSubject ? (
-              <Button onClick={handleUpdateSubject}>Update</Button>
-            ) : (
-              <Button onClick={handleCreateSubject}>Create</Button>
-            )}
+          <div className="flex flex-col md:flex-row gap-2 mb-6">
+            <div className="flex-grow">
+              <Input
+                placeholder="Subject Name"
+                value={newSubject.name}
+                onChange={(e) => setNewSubject(prev => ({ ...prev, name: e.target.value }))}
+                className="mb-2 md:mb-0"
+              />
+            </div>
+            <div className="flex-grow">
+              <Input
+                placeholder="Description (optional)"
+                value={newSubject.description}
+                onChange={(e) => setNewSubject(prev => ({ ...prev, description: e.target.value }))}
+                className="mb-2 md:mb-0"
+              />
+            </div>
+            <div className="flex gap-2">
+              {editingSubject ? (
+                <>
+                  <Button onClick={handleUpdateSubject}>Save Changes</Button>
+                  <Button variant="outline" onClick={cancelEdit}>Cancel</Button>
+                </>
+              ) : (
+                <Button onClick={handleCreateSubject} className="w-full md:w-auto">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Subject
+                </Button>
+              )}
+            </div>
           </div>
 
-          {loading ? (
-            <p>Loading subjects...</p>
-          ) : (
-            <div className="space-y-2">
+          {loading && subjects.length === 0 ? (
+            <div className="flex justify-center items-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : subjects.length > 0 ? (
+            <div className="space-y-3">
               {subjects.map(subject => (
-                <div key={subject.id} className="flex justify-between items-center p-2 border rounded">
+                <div 
+                  key={subject.id} 
+                  className="flex justify-between items-center p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  style={{ 
+                    borderLeft: subject.color_code ? `4px solid ${subject.color_code}` : undefined 
+                  }}
+                >
                   <div>
-                    <h3 className="font-semibold">{subject.name}</h3>
-                    <p className="text-sm text-muted-foreground">{subject.description}</p>
+                    <h3 className="font-medium text-lg">{subject.name}</h3>
+                    {subject.description && <p className="text-sm text-muted-foreground">{subject.description}</p>}
                   </div>
-                  <div className="space-x-2">
+                  <div className="flex gap-2">
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => {
-                        setNewSubject({ name: subject.name, description: subject.description || '' });
+                        setNewSubject({ 
+                          name: subject.name, 
+                          description: subject.description || '' 
+                        });
                         setEditingSubject(subject.id);
                       }}
                     >
@@ -110,6 +148,10 @@ const Subjects = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="text-center p-8 border border-dashed rounded-lg">
+              <p className="text-muted-foreground">No subjects found. Create your first subject to get started.</p>
             </div>
           )}
         </CardContent>

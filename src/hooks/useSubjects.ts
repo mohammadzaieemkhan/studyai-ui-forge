@@ -3,7 +3,17 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/types/supabase';
 
-type Subject = Database['public']['Tables']['subjects']['Row'];
+type Subject = {
+  id: string;
+  user_id: string;
+  name: string;
+  subject_code?: string | null;
+  color_code?: string | null;
+  icon_name?: string | null;
+  description?: string | null;
+  created_at: string;
+};
+
 type InsertSubject = Database['public']['Tables']['subjects']['Insert'];
 
 export const useSubjects = () => {
@@ -19,7 +29,7 @@ export const useSubjects = () => {
         .select('*');
 
       if (error) throw error;
-      setSubjects(data || []);
+      setSubjects(data as Subject[] || []);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -37,7 +47,7 @@ export const useSubjects = () => {
 
       if (error) throw error;
       if (data) {
-        setSubjects(prev => [...prev, data[0]]);
+        setSubjects(prev => [...prev, data[0] as Subject]);
       }
     } catch (err: any) {
       setError(err.message);
@@ -59,7 +69,7 @@ export const useSubjects = () => {
       if (data) {
         setSubjects(prev => 
           prev.map(subject => 
-            subject.id === id ? data[0] : subject
+            subject.id === id ? data[0] as Subject : subject
           )
         );
       }
