@@ -16,6 +16,7 @@ import ExamView from "./pages/ExamView";
 import DashboardLayout from "./components/Dashboard/DashboardLayout";
 import NotFound from "./pages/NotFound";
 import Subjects from './pages/Subjects';
+import MaterialDetails from "./pages/MaterialDetails";
 
 const App = () => {
   // Create a client
@@ -39,9 +40,9 @@ const App = () => {
                 <Route path="/exam-creation" element={<ExamCreation />} />
                 <Route path="/exam-view" element={<ExamView />} />
                 <Route path="/subjects" element={<Subjects />} />
+                <Route path="/materials/:slug" element={<MaterialDetails />} />
                 <Route path="/performance" element={<Dashboard />} /> {/* Placeholder */}
                 <Route path="/schedule" element={<Dashboard />} /> {/* Placeholder */}
-                <Route path="/materials/:subject" element={<Dashboard />} /> {/* Placeholder */}
                 <Route path="/materials" element={<Dashboard />} /> {/* Placeholder */}
                 <Route path="/past-exams" element={<Dashboard />} /> {/* Placeholder */}
                 <Route path="/saved-questions" element={<Dashboard />} /> {/* Placeholder */}
