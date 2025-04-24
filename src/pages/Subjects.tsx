@@ -10,7 +10,7 @@ import { Loader2, PlusCircle } from 'lucide-react';
 const Subjects = () => {
   const { subjects, loading, error, fetchSubjects, createSubject, updateSubject, deleteSubject } = useSubjects();
   const [newSubject, setNewSubject] = useState({ name: '', description: '' });
-  const [editingSubject, setEditingSubject] = useState<string | null>(null);
+  const [editingSubject, setEditingSubject] = useState<number | null>(null);
 
   // Get the current user ID - would normally come from auth context
   // For now we'll use a placeholder
@@ -43,7 +43,7 @@ const Subjects = () => {
   };
 
   const handleUpdateSubject = async () => {
-    if (editingSubject) {
+    if (editingSubject !== null) {
       await updateSubject(editingSubject, {
         name: newSubject.name,
         description: newSubject.description
@@ -54,7 +54,7 @@ const Subjects = () => {
     }
   };
 
-  const handleDeleteSubject = async (id: string) => {
+  const handleDeleteSubject = async (id: number) => {
     await deleteSubject(id);
     toast.success('Subject deleted successfully');
   };
@@ -92,7 +92,7 @@ const Subjects = () => {
               />
             </div>
             <div className="flex gap-2">
-              {editingSubject ? (
+              {editingSubject !== null ? (
                 <>
                   <Button onClick={handleUpdateSubject}>Save Changes</Button>
                   <Button variant="outline" onClick={cancelEdit}>Cancel</Button>
@@ -114,7 +114,7 @@ const Subjects = () => {
             <div className="space-y-3">
               {subjects.map(subject => (
                 <div 
-                  key={subject.id} 
+                  key={subject.subject_id} 
                   className="flex justify-between items-center p-4 border rounded-lg hover:bg-accent/50 transition-colors"
                   style={{ 
                     borderLeft: subject.color_code ? `4px solid ${subject.color_code}` : undefined 
@@ -133,7 +133,7 @@ const Subjects = () => {
                           name: subject.name, 
                           description: subject.description || '' 
                         });
-                        setEditingSubject(subject.id);
+                        setEditingSubject(subject.subject_id);
                       }}
                     >
                       Edit
@@ -141,7 +141,7 @@ const Subjects = () => {
                     <Button 
                       variant="destructive" 
                       size="sm"
-                      onClick={() => handleDeleteSubject(subject.id)}
+                      onClick={() => handleDeleteSubject(subject.subject_id)}
                     >
                       Delete
                     </Button>

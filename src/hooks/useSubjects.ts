@@ -3,18 +3,22 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/types/supabase';
 
+// Updated Subject type to match the actual database schema
 type Subject = {
-  id: string;
-  user_id: string;
+  subject_id: number;
   name: string;
-  subject_code?: string | null;
   color_code?: string | null;
   icon_name?: string | null;
   description?: string | null;
-  created_at: string;
 };
 
-type InsertSubject = Database['public']['Tables']['subjects']['Insert'];
+type InsertSubject = {
+  name: string;
+  color_code?: string | null;
+  icon_name?: string | null;
+  description?: string | null;
+  user_id?: string | null;
+};
 
 export const useSubjects = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -56,20 +60,20 @@ export const useSubjects = () => {
     }
   };
 
-  const updateSubject = async (id: string, updates: Partial<Subject>) => {
+  const updateSubject = async (id: number, updates: Partial<Subject>) => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('subjects')
         .update(updates)
-        .eq('id', id)
+        .eq('subject_id', id)
         .select();
 
       if (error) throw error;
       if (data) {
         setSubjects(prev => 
           prev.map(subject => 
-            subject.id === id ? data[0] as Subject : subject
+            subject.subject_id === id ? data[0] as Subject : subject
           )
         );
       }
@@ -80,16 +84,16 @@ export const useSubjects = () => {
     }
   };
 
-  const deleteSubject = async (id: string) => {
+  const deleteSubject = async (id: number) => {
     setLoading(true);
     try {
       const { error } = await supabase
         .from('subjects')
         .delete()
-        .eq('id', id);
+        .eq('subject_id', id);
 
       if (error) throw error;
-      setSubjects(prev => prev.filter(subject => subject.id !== id));
+      setSubjects(prev => prev.filter(subject => subject.subject_id !== id));
     } catch (err: any) {
       setError(err.message);
     } finally {
