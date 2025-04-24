@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import ExamCreation from "./pages/ExamCreation";
 import DashboardLayout from "./components/Dashboard/DashboardLayout";
 import NotFound from "./pages/NotFound";
+import Subjects from './pages/Subjects';
 
 const App = () => {
   // Create a client
@@ -34,6 +35,7 @@ const App = () => {
               <Route path="/" element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/exam-creation" element={<ExamCreation />} />
+                <Route path="/subjects" element={<Subjects />} />
                 <Route path="/performance" element={<Dashboard />} /> {/* Placeholder */}
                 <Route path="/schedule" element={<Dashboard />} /> {/* Placeholder */}
                 <Route path="/materials/:subject" element={<Dashboard />} /> {/* Placeholder */}
