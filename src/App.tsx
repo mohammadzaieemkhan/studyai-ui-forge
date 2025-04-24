@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -11,6 +12,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ExamCreation from "./pages/ExamCreation";
+import ExamView from "./pages/ExamView";
 import DashboardLayout from "./components/Dashboard/DashboardLayout";
 import NotFound from "./pages/NotFound";
 import Subjects from './pages/Subjects';
@@ -35,6 +37,7 @@ const App = () => {
               <Route path="/" element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/exam-creation" element={<ExamCreation />} />
+                <Route path="/exam-view" element={<ExamView />} />
                 <Route path="/subjects" element={<Subjects />} />
                 <Route path="/performance" element={<Dashboard />} /> {/* Placeholder */}
                 <Route path="/schedule" element={<Dashboard />} /> {/* Placeholder */}

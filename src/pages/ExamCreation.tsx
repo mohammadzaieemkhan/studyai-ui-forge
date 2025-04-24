@@ -1,526 +1,372 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
-import { FileUp, Brain, Loader2, Check, BookOpen, Sparkles, FileQuestion } from "lucide-react";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { toast } from 'sonner';
+import { Loader2, Wand2, Save, FileText, Book, Clock, Award, PenLine } from 'lucide-react';
+import SyllabusUploader from '@/components/SyllabusUploader';
+import { generateExamWithGemini } from '@/services/geminiService';
 
-interface QuestionType {
-  id: string;
-  question: string;
-  options?: string[];
-  answer?: string;
-  explanation?: string;
+interface Topic {
+  name: string;
+  subtopics: string[];
+  keyTerms: string[];
+  difficulty: string;
+}
+
+interface ExtractedTopics {
+  mainSubject: string;
+  topics: Topic[];
 }
 
 const ExamCreation = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("ai");
-  const [showPreview, setShowPreview] = useState(false);
-  const [examGenerated, setExamGenerated] = useState(false);
+  const [activeTab, setActiveTab] = useState('manual');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [subjectInput, setSubjectInput] = useState('');
+  const [topicInput, setTopicInput] = useState('');
+  const [difficulty, setDifficulty] = useState('medium');
+  const [questionCount, setQuestionCount] = useState<number>(10);
+  const [questionType, setQuestionType] = useState('multiple-choice');
+  const [timeLimit, setTimeLimit] = useState<number>(30);
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [extractedTopics, setExtractedTopics] = useState<ExtractedTopics | null>(null);
 
-  const [formData, setFormData] = useState({
-    subject: "",
-    topic: "",
-    difficulty: "medium",
-    questionCount: 10,
-    questionType: "multiple-choice",
-    timeLimit: 60,
-    customPrompt: "",
-    syllabus: null as File | null,
-  });
-
-  const [generatedQuestions, setGeneratedQuestions] = useState<QuestionType[]>([]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-
-  const handleSliderChange = (name: string, value: number[]) => {
-    setFormData({
-      ...formData,
-      [name]: value[0],
-    });
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData({
-        ...formData,
-        syllabus: e.target.files[0],
-      });
+  const handleTopicsExtracted = (topics: ExtractedTopics) => {
+    setExtractedTopics(topics);
+    setSubjectInput(topics.mainSubject);
+    if (topics.topics.length > 0) {
+      setTopicInput(topics.topics[0].name);
+      setDifficulty(topics.topics[0].difficulty.toLowerCase());
     }
   };
 
-  const generateExam = async () => {
-    if (!formData.subject || !formData.topic) {
-      toast.error("Please fill in required fields");
+  const handleGenerateExam = async () => {
+    if (!subjectInput) {
+      toast.error('Please enter a subject');
+      return;
+    }
+    
+    if (!topicInput) {
+      toast.error('Please enter a topic');
       return;
     }
 
-    setLoading(true);
-    
     try {
-      // Example API call to Gemini API (mock implementation)
-      // In a real implementation, you would call your backend which would use the API key
-      // const response = await fetch('/api/generate-exam', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
-      // const data = await response.json();
+      setIsGenerating(true);
       
-      // Simulate API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const examParams = {
+        subject: subjectInput,
+        topic: topicInput,
+        difficulty,
+        questionCount,
+        questionType,
+        timeLimit,
+        customPrompt: customPrompt || undefined,
+        syllabus: null
+      };
       
-      // Mock generated questions
-      const mockQuestions = Array.from({ length: formData.questionCount }, (_, i) => ({
-        id: `q-${i + 1}`,
-        question: `Sample question ${i + 1} for ${formData.topic} in ${formData.subject}?`,
-        options: formData.questionType === "multiple-choice" 
-          ? ['Option A', 'Option B', 'Option C', 'Option D'] 
-          : undefined,
-        answer: formData.questionType === "multiple-choice" 
-          ? "Option B" 
-          : formData.questionType === "long-answer"
-            ? "This would be a comprehensive answer that thoroughly addresses the question, with multiple paragraphs discussing the key concepts, examples, and applications relevant to the topic."
-            : "Sample answer for question.",
-        explanation: "This is an explanation of the correct answer and the concept tested."
-      }));
+      const response = await generateExamWithGemini(examParams);
       
-      setGeneratedQuestions(mockQuestions);
-      setExamGenerated(true);
-      setShowPreview(true);
-      toast.success("Exam generated successfully!");
-    } catch (error) {
-      console.error("Error generating exam:", error);
-      toast.error("Failed to generate exam. Please try again.");
+      // Store in session storage to be used in the exam view page
+      sessionStorage.setItem('generatedExam', JSON.stringify(response));
+      
+      toast.success('Exam generated successfully!');
+      navigate('/exam-view'); // You'd need to create this page
+    } catch (error: any) {
+      console.error('Error generating exam:', error);
+      toast.error(error.message || 'Failed to generate exam');
     } finally {
-      setLoading(false);
+      setIsGenerating(false);
     }
   };
 
-  const saveExam = () => {
-    // In a real implementation, you would save the exam to your backend
-    toast.success("Exam saved successfully!");
-    navigate("/dashboard");
+  const renderSliderMarks = (min: number, max: number, step: number) => {
+    const marks = [];
+    for (let i = min; i <= max; i += step) {
+      marks.push(
+        <div key={i} className="absolute text-xs text-muted-foreground" style={{ left: `${((i - min) / (max - min)) * 100}%`, bottom: '-20px' }}>
+          {i}
+        </div>
+      );
+    }
+    return marks;
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Exam Creation</h1>
-          <p className="text-muted-foreground">
-            Create a custom exam using AI or upload your own materials
-          </p>
-        </div>
+        <h1 className="text-3xl font-bold">Create Exam</h1>
       </div>
-
-      <Tabs defaultValue="ai" value={activeTab} onValueChange={setActiveTab}>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="ai" className="flex items-center gap-2">
-            <Brain className="h-4 w-4" />
-            <span>AI Generation</span>
-          </TabsTrigger>
-          <TabsTrigger value="upload" className="flex items-center gap-2">
-            <FileUp className="h-4 w-4" />
-            <span>Upload Materials</span>
-          </TabsTrigger>
+          <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+          <TabsTrigger value="syllabus">Upload Syllabus</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="ai" className="mt-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Exam Parameters</CardTitle>
-                <CardDescription>
-                  Define the parameters for your AI-generated exam
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        <TabsContent value="manual" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Create New Exam</CardTitle>
+              <CardDescription>
+                Enter the details for your new exam and our AI will generate questions for you.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Subject <span className="text-red-500">*</span></Label>
-                  <Select
-                    value={formData.subject}
-                    onValueChange={(value) => handleSelectChange("subject", value)}
-                  >
-                    <SelectTrigger id="subject">
-                      <SelectValue placeholder="Select subject" />
+                  <Label htmlFor="subject">Subject</Label>
+                  <Input 
+                    id="subject" 
+                    placeholder="e.g. Mathematics, Physics" 
+                    value={subjectInput}
+                    onChange={(e) => setSubjectInput(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="topic">Topic</Label>
+                  <Input 
+                    id="topic" 
+                    placeholder="e.g. Calculus, Quantum Mechanics" 
+                    value={topicInput}
+                    onChange={(e) => setTopicInput(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="difficulty">Difficulty</Label>
+                  <Select value={difficulty} onValueChange={setDifficulty}>
+                    <SelectTrigger id="difficulty">
+                      <SelectValue placeholder="Select difficulty" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="mathematics">Mathematics</SelectItem>
-                      <SelectItem value="physics">Physics</SelectItem>
-                      <SelectItem value="chemistry">Chemistry</SelectItem>
-                      <SelectItem value="biology">Biology</SelectItem>
-                      <SelectItem value="history">History</SelectItem>
-                      <SelectItem value="literature">Literature</SelectItem>
-                      <SelectItem value="computer-science">Computer Science</SelectItem>
+                      <SelectItem value="easy">Easy</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="hard">Hard</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="topic">Topic <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="topic"
-                    name="topic"
-                    placeholder="e.g., Calculus, Thermodynamics"
-                    value={formData.topic}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="difficulty">Difficulty Level</Label>
-                  <RadioGroup
-                    id="difficulty"
-                    value={formData.difficulty}
-                    onValueChange={(value) => handleSelectChange("difficulty", value)}
-                    className="flex space-x-2"
-                  >
-                    <div className="flex items-center space-x-1">
-                      <RadioGroupItem value="easy" id="easy" />
-                      <Label htmlFor="easy">Easy</Label>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <RadioGroupItem value="medium" id="medium" />
-                      <Label htmlFor="medium">Medium</Label>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <RadioGroupItem value="hard" id="hard" />
-                      <Label htmlFor="hard">Hard</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="questionType">Question Type</Label>
-                  <Select
-                    value={formData.questionType}
-                    onValueChange={(value) => handleSelectChange("questionType", value)}
-                  >
-                    <SelectTrigger id="questionType">
-                      <SelectValue />
+                  <Label htmlFor="question-type">Question Type</Label>
+                  <Select value={questionType} onValueChange={setQuestionType}>
+                    <SelectTrigger id="question-type">
+                      <SelectValue placeholder="Select question type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
-                      <SelectItem value="short-answer">Short Answer</SelectItem>
                       <SelectItem value="true-false">True/False</SelectItem>
+                      <SelectItem value="short-answer">Short Answer</SelectItem>
                       <SelectItem value="essay">Essay</SelectItem>
-                      <SelectItem value="long-answer">Long Answer</SelectItem>
-                      <SelectItem value="mixed">Mixed</SelectItem>
+                      <SelectItem value="mixed">Mixed Types</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="questionCount">Number of Questions: {formData.questionCount}</Label>
-                  </div>
-                  <Slider
-                    id="questionCount"
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label htmlFor="question-count">Number of Questions: {questionCount}</Label>
+                </div>
+                <div className="relative pt-1 px-2">
+                  <Slider 
+                    id="question-count"
                     min={5}
                     max={50}
                     step={5}
-                    value={[formData.questionCount]}
-                    onValueChange={(value) => handleSliderChange("questionCount", value)}
+                    value={[questionCount]}
+                    onValueChange={(value) => setQuestionCount(value[0])}
                   />
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="timeLimit">Time Limit (minutes): {formData.timeLimit}</Label>
+                  <div className="relative h-6">
+                    {renderSliderMarks(5, 50, 15)}
                   </div>
-                  <Slider
-                    id="timeLimit"
-                    min={15}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label htmlFor="time-limit">Time Limit: {timeLimit} minutes</Label>
+                </div>
+                <div className="relative pt-1 px-2">
+                  <Slider 
+                    id="time-limit"
+                    min={10}
                     max={180}
-                    step={15}
-                    value={[formData.timeLimit]}
-                    onValueChange={(value) => handleSliderChange("timeLimit", value)}
+                    step={10}
+                    value={[timeLimit]}
+                    onValueChange={(value) => setTimeLimit(value[0])}
                   />
+                  <div className="relative h-6">
+                    {renderSliderMarks(10, 180, 50)}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="custom-prompt">Additional Instructions (Optional)</Label>
+                <Textarea 
+                  id="custom-prompt" 
+                  placeholder="Add any specific instructions for the AI generating your exam"
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                />
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline">
+                <Save className="mr-2 h-4 w-4" />
+                Save as Draft
+              </Button>
+              <Button onClick={handleGenerateExam} disabled={isGenerating}>
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Generate Exam
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="syllabus" className="mt-4">
+          <SyllabusUploader onTopicsExtracted={handleTopicsExtracted} />
+          
+          {extractedTopics && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Generate Exam from Syllabus</CardTitle>
+                <CardDescription>
+                  Review the extracted topics and customize your exam settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="subject-from-syllabus">Subject</Label>
+                    <Input 
+                      id="subject-from-syllabus" 
+                      value={subjectInput}
+                      onChange={(e) => setSubjectInput(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="topic-from-syllabus">Topic</Label>
+                    <Select value={topicInput} onValueChange={setTopicInput}>
+                      <SelectTrigger id="topic-from-syllabus">
+                        <SelectValue placeholder="Select a topic" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {extractedTopics.topics.map((topic, index) => (
+                          <SelectItem key={index} value={topic.name}>
+                            {topic.name} ({topic.difficulty})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="customPrompt">Custom Instructions (Optional)</Label>
-                  <Textarea
-                    id="customPrompt"
-                    name="customPrompt"
-                    placeholder="Include specific topics, concepts, or instructions..."
-                    value={formData.customPrompt}
-                    onChange={handleInputChange}
-                    rows={3}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="question-type-from-syllabus">Question Type</Label>
+                    <Select value={questionType} onValueChange={setQuestionType}>
+                      <SelectTrigger id="question-type-from-syllabus">
+                        <SelectValue placeholder="Select question type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                        <SelectItem value="true-false">True/False</SelectItem>
+                        <SelectItem value="short-answer">Short Answer</SelectItem>
+                        <SelectItem value="essay">Essay</SelectItem>
+                        <SelectItem value="mixed">Mixed Types</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="difficulty-from-syllabus">Difficulty</Label>
+                    <Select value={difficulty} onValueChange={setDifficulty}>
+                      <SelectTrigger id="difficulty-from-syllabus">
+                        <SelectValue placeholder="Select difficulty" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="easy">Easy</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="hard">Hard</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label htmlFor="question-count-from-syllabus">Number of Questions: {questionCount}</Label>
+                    </div>
+                    <Slider 
+                      id="question-count-from-syllabus"
+                      min={5}
+                      max={50}
+                      step={5}
+                      value={[questionCount]}
+                      onValueChange={(value) => setQuestionCount(value[0])}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label htmlFor="time-limit-from-syllabus">Time Limit: {timeLimit} minutes</Label>
+                    </div>
+                    <Slider 
+                      id="time-limit-from-syllabus"
+                      min={10}
+                      max={180}
+                      step={10}
+                      value={[timeLimit]}
+                      onValueChange={(value) => setTimeLimit(value[0])}
+                    />
+                  </div>
                 </div>
               </CardContent>
-              <CardFooter>
-                <Button 
-                  onClick={generateExam} 
-                  className="w-full"
-                  disabled={loading}
-                >
-                  {loading ? (
+              <CardFooter className="flex justify-between">
+                <Button variant="outline">
+                  <Save className="mr-2 h-4 w-4" />
+                  Save as Draft
+                </Button>
+                <Button onClick={handleGenerateExam} disabled={isGenerating}>
+                  {isGenerating ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating Exam...
+                      Generating...
                     </>
                   ) : (
                     <>
-                      <Sparkles className="mr-2 h-4 w-4" />
+                      <Wand2 className="mr-2 h-4 w-4" />
                       Generate Exam
                     </>
                   )}
                 </Button>
               </CardFooter>
             </Card>
-            
-            <Card className={showPreview ? "" : "hidden md:block"}>
-              <CardHeader>
-                <CardTitle>Exam Preview</CardTitle>
-                <CardDescription>
-                  {examGenerated 
-                    ? `${formData.subject}: ${formData.topic} (${formData.questionCount} questions)` 
-                    : "Your exam will appear here after generation"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {!examGenerated ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <FileQuestion className="h-16 w-16 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium">No Exam Generated Yet</h3>
-                    <p className="mt-2 text-sm text-muted-foreground max-w-xs">
-                      Fill in the exam parameters and click "Generate Exam" to create your custom test
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2">
-                    {generatedQuestions.slice(0, 3).map((q, index) => (
-                      <div key={q.id} className="rounded-lg border p-4">
-                        <h3 className="font-medium">Question {index + 1}</h3>
-                        <p className="mt-2">{q.question}</p>
-                        
-                        {q.options && (
-                          <div className="mt-3 space-y-2">
-                            {q.options.map((option, i) => (
-                              <div key={i} className="flex items-start gap-2">
-                                <div className="flex h-5 w-5 items-center justify-center rounded-full border border-primary text-xs">
-                                  {String.fromCharCode(65 + i)}
-                                </div>
-                                <span>{option}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {formData.questionType === "long-answer" && (
-                          <div className="mt-3">
-                            <Label htmlFor={`answer-${q.id}`} className="text-xs text-muted-foreground">Long Answer Response Area</Label>
-                            <div className="mt-1 border border-dashed border-gray-300 rounded-md p-2 min-h-[100px] bg-gray-50/50">
-                              <p className="text-xs text-muted-foreground italic">
-                                Student will provide a detailed response here...
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    
-                    {examGenerated && generatedQuestions.length > 3 && (
-                      <div className="text-center py-4 text-sm text-muted-foreground">
-                        {generatedQuestions.length - 3} more questions available...
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-              {examGenerated && (
-                <CardFooter className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate("/exams/preview")}
-                  >
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    Full Preview
-                  </Button>
-                  <Button 
-                    className="w-full"
-                    onClick={saveExam}
-                  >
-                    <Check className="mr-2 h-4 w-4" />
-                    Save Exam
-                  </Button>
-                </CardFooter>
-              )}
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="upload" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload Study Materials</CardTitle>
-              <CardDescription>
-                Upload your notes, textbooks, or syllabi to generate exams
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="uploadedSubject">Subject <span className="text-red-500">*</span></Label>
-                    <Input
-                      id="uploadedSubject"
-                      name="subject"
-                      placeholder="e.g., Mathematics, Physics"
-                      value={formData.subject}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="uploadedTopic">Topic <span className="text-red-500">*</span></Label>
-                    <Input
-                      id="uploadedTopic"
-                      name="topic"
-                      placeholder="e.g., Calculus, Thermodynamics"
-                      value={formData.topic}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="syllabusFile">Upload File</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="syllabusFile"
-                        type="file"
-                        accept=".pdf,.doc,.docx,.txt"
-                        onChange={handleFileChange}
-                        className="file:bg-primary file:text-primary-foreground file:border-none file:rounded-md file:px-2 file:py-1 file:mr-2 cursor-pointer"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Supports PDF, DOC, DOCX, and TXT files (max 10MB)
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="uploadQuestionCount">
-                      Number of Questions: {formData.questionCount}
-                    </Label>
-                    <Slider
-                      id="uploadQuestionCount"
-                      min={5}
-                      max={50}
-                      step={5}
-                      value={[formData.questionCount]}
-                      onValueChange={(value) => handleSliderChange("questionCount", value)}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="uploadDifficulty">Difficulty Level</Label>
-                    <RadioGroup
-                      id="uploadDifficulty"
-                      value={formData.difficulty}
-                      onValueChange={(value) => handleSelectChange("difficulty", value)}
-                      className="flex space-x-2"
-                    >
-                      <div className="flex items-center space-x-1">
-                        <RadioGroupItem value="easy" id="uploadEasy" />
-                        <Label htmlFor="uploadEasy">Easy</Label>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <RadioGroupItem value="medium" id="uploadMedium" />
-                        <Label htmlFor="uploadMedium">Medium</Label>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <RadioGroupItem value="hard" id="uploadHard" />
-                        <Label htmlFor="uploadHard">Hard</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="uploadQuestionType">Question Type</Label>
-                    <Select
-                      value={formData.questionType}
-                      onValueChange={(value) => handleSelectChange("questionType", value)}
-                    >
-                      <SelectTrigger id="uploadQuestionType">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
-                        <SelectItem value="short-answer">Short Answer</SelectItem>
-                        <SelectItem value="true-false">True/False</SelectItem>
-                        <SelectItem value="essay">Essay</SelectItem>
-                        <SelectItem value="long-answer">Long Answer</SelectItem>
-                        <SelectItem value="mixed">Mixed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="uploadCustomPrompt">Additional Instructions (Optional)</Label>
-                <Textarea
-                  id="uploadCustomPrompt"
-                  name="customPrompt"
-                  placeholder="Include specific topics, concepts, or instructions..."
-                  value={formData.customPrompt}
-                  onChange={handleInputChange}
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                onClick={generateExam} 
-                className="w-full"
-                disabled={loading || !formData.syllabus}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating Exam...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Exam from Upload
-                  </>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
