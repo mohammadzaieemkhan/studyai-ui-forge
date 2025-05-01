@@ -18,9 +18,15 @@ import NotFound from "./pages/NotFound";
 import Subjects from './pages/Subjects';
 import MaterialDetails from "./pages/MaterialDetails";
 
+console.log("App.tsx: Component loaded");
+
 const App = () => {
+  console.log("App.tsx: Component rendering");
   // Create a client
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(() => {
+    console.log("App.tsx: Creating QueryClient");
+    return new QueryClient();
+  });
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Menu, X } from "lucide-react";
 
+console.log("Navbar.tsx: Component loaded");
+
 const Navbar = () => {
+  console.log("Navbar.tsx: Component rendering");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {

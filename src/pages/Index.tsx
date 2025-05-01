@@ -15,7 +15,10 @@ import {
   ArrowRight
 } from "lucide-react";
 
+console.log("Index.tsx: Component loaded");
+
 const Index = () => {
+  console.log("Index.tsx: Component rendering");
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
